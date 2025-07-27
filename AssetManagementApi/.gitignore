@@ -1,0 +1,18 @@
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.aps
+*.pdb
+*.obj
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+bin/
+obj/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
