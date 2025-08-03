@@ -4,43 +4,59 @@ using AssetManagementApi.Data; // For ApplicationDbContext
 using Microsoft.EntityFrameworkCore; // For UseSqlServer extension method
 using Microsoft.Extensions.FileProviders; // For PhysicalFileProvider
 using Microsoft.AspNetCore.Hosting; // For IWebHostEnvironment (used by app.Environment)
+using AssetManagementApi.Filters;
+using Microsoft.Extensions.Options;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
-// Add Controllers service
-builder.Services.AddControllers();
+// Add Controllers service with JSON options
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+});
 
 // Configure Swagger/OpenAPI for API documentation
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.OperationFilter<SwaggerFileOperationFilter>();
+});
+
+// Configure CORS Policy (Consolidated into one section)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        policyBuilder =>
+        {
+            policyBuilder.WithOrigins("http://localhost:5173", "http://localhost:3000") 
+                       .AllowAnyHeader()
+                       .AllowAnyMethod();
+        });
+});
 
 // Configure SQL Server DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configure CORS (Cross-Origin Resource Sharing)
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigin", // Name of your CORS policy
-        builder => builder.WithOrigins("http://localhost:3000") // IMPORTANT: Replace with your React app's URL
-                          .AllowAnyHeader()
-                          .AllowAnyMethod());
-});
 
+var app = builder.Build(); // <-- Application build point
 
-var app = builder.Build();
+// Configure the HTTP request pipeline (Middleware configured AFTER app.Build() and BEFORE app.Run())
 
-// Configure the HTTP request pipeline.
-// In Development environment, use Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    // HTTPS redirection usually comes after Swagger if Swagger is to be served via HTTP
+    // app.UseHttpsRedirection(); 
 }
-
-app.UseHttpsRedirection();
+else
+{
+    // In production, enforce HTTPS
+    app.UseHttpsRedirection();
+}
 
 // --- STATIC FILES CONFIGURATION ---
 // Get the application's base directory (e.g., C:\...\AssetManagementApi)
@@ -50,7 +66,6 @@ string contentRootPath = app.Environment.ContentRootPath;
 // of AssetManagementApi (e.g., C:\...\AssetManagementStorage)
 string staticFilesPath = Path.Combine(contentRootPath, "..", "AssetManagementStorage");
 
-// Ensure the directory exists. Create it if it doesn't.
 if (!Directory.Exists(staticFilesPath))
 {
     try
@@ -61,7 +76,7 @@ if (!Directory.Exists(staticFilesPath))
     catch (Exception ex)
     {
         Console.WriteLine($"[ERROR] Failed to create static files directory '{staticFilesPath}': {ex.Message}");
-        // You might want to log the full exception details here in a real application
+        // Optionally re-throw or handle more robustly if directory creation is critical for startup
     }
 }
 else
@@ -73,16 +88,19 @@ else
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(staticFilesPath),
-    RequestPath = "/StaticFiles" // This is the URL prefix (e.g., http://localhost:5062/StaticFiles/my_doc.pdf)
+    RequestPath = "/StaticFiles" // This is the URL prefix for accessing files (e.g., http://localhost:5062/StaticFiles/yourfile.pdf)
 });
-// --- END STATIC FILES CONFIGURATION ---
 
-// Use the CORS policy you defined
-app.UseCors("AllowSpecificOrigin"); // IMPORTANT: This must be before app.UseAuthorization();
+// Use Routing middleware (must come before UseCors and UseAuthorization if using endpoint routing)
+app.UseRouting();
 
+// Use the CORS policy you defined (must come after UseRouting() and before UseAuthorization())
+app.UseCors("AllowSpecificOrigin");
+
+// Use Authorization middleware
 app.UseAuthorization();
 
-// Map controller routes
+// Map controller routes (must come after UseRouting and UseAuthorization)
 app.MapControllers();
 
 app.Run();

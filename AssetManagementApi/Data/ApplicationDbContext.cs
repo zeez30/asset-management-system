@@ -1,7 +1,5 @@
-// File: AssetManagementApi/Data/ApplicationDbContext.cs
-
 using Microsoft.EntityFrameworkCore;
-using AssetManagementApi.Models; // Make sure this using directive is present
+using AssetManagementApi.Models; 
 
 namespace AssetManagementApi.Data
 {
@@ -12,7 +10,7 @@ namespace AssetManagementApi.Data
         {
         }
 
-        // DbSets for your tables
+        // DbSets  tables
         public DbSet<Asset> Assets { get; set; }
         public DbSet<AssetDocument> AssetDocuments { get; set; }
         public DbSet<Asset3DModel> Asset3DModels { get; set; }

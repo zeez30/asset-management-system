@@ -1,50 +1,39 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+// File: AssetManagementApi/Models/AssetDocument.cs
+
+using System; // For DateTime
+using System.ComponentModel.DataAnnotations; // For [Key]
+using System.ComponentModel.DataAnnotations.Schema; // For [ForeignKey] if needed for clarity
 
 namespace AssetManagementApi.Models
 {
     public class AssetDocument
     {
-        [Key] // Primary Key
-        public int DocumentID { get; set; } // Auto-incrementing ID
+        [Key] // Designates DocumentId as the primary key
+        public string DocumentId { get; set; } = Guid.NewGuid().ToString(); // Unique ID for the document entry
 
-        [ForeignKey("Asset")] // Links to the Asset TagNumber
-        [StringLength(50)]
+        // Foreign Key to Asset
         [Required]
-        public string TagNumber { get; set; } = string.Empty; // Foreign Key to Asset
-
-        [Required]
-        [StringLength(255)]
-        public string FileName { get; set; } = string.Empty; // Original name of the file
-
-        [Required]
-        [StringLength(255)]
-        public string FilePath { get; set; } = string.Empty; // Relative path on the server's file system
-
-        [StringLength(255)]
-        public string? Description { get; set; }
-
-        [StringLength(50)]
-        public string? DocumentType { get; set; } // e.g., "Manual", "Schematic"
-
-        public int? FileSizeKB { get; set; } // Size of the file in kilobytes
-
-        [StringLength(100)]
-        public string? UploadedBy { get; set; }
+        // This links to the Asset's TagNumber, which is its primary key.
+        // It's good practice to explicitly state the foreign key relationship
+        // if the property name doesn't follow EF Core conventions exactly (e.g., AssetTagNumber instead of TagNumber)
+        // [ForeignKey("Asset")] // This would be if you named the navigation property 'Asset' and wanted to explicitly state the FK
+        public string TagNumber { get; set; } // Links to the Asset's TagNumber
 
         [Required]
-        public DateTime UploadDate { get; set; } = DateTime.UtcNow;
+        [MaxLength(255)] // Max length for the original file name
+        public string FileName { get; set; } // Original name of the uploaded file
 
-        [StringLength(20)]
-        public string? Version { get; set; }
+        [Required]
+        [MaxLength(500)] // Max length for the path where the file is stored (URL-friendly)
+        public string FilePath { get; set; } // Relative URL path where the file can be accessed (e.g., /StaticFiles/uniqueid.pdf)
 
-        // Navigation property back to the Asset
-        public Asset? Asset { get; set; }
+        [MaxLength(100)] // Max length for MIME type (e.g., "application/pdf")
+        public string FileType { get; set; } // MIME type of the file
 
-        // Constructor to ensure non-nullable properties are initialized
-        public AssetDocument()
-        {
-            UploadDate = DateTime.UtcNow;
-        }
+        public DateTime UploadDate { get; set; } // Date and time when the document was uploaded
+
+        // Navigation property back to Asset (optional, but good for EF Core relationships)
+        // This allows you to easily access the associated Asset from an AssetDocument
+        public Asset Asset { get; set; }
     }
 }
