@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace AssetManagementApi.Models
 {
-    public class Asset2DModels
+    public class AssetDocuments
     {
         [Key]
         public int Id { get; set; }
@@ -15,6 +15,6 @@ namespace AssetManagementApi.Models
 
         public string? FileName { get; set; }
         public string? FilePath { get; set; }
-        public string? DrawingType { get; set; }
+        public string? DocumentType { get; set; }
     }
 }

@@ -8,9 +8,9 @@ namespace AssetManagementApi.Models
     public class FileUploadRequest
     {
         [Required]
-        public IFormFile File { get; set; }
+        public required IFormFile File { get; set; }
 
         [Required]
-        public string TagNumber { get; set; }
+        public required string TagNumber { get; set; }
     }
 }
