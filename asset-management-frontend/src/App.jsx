@@ -1,202 +1,272 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import logo from './assets/noc_logo.png'; 
+import logo from './assets/noc_logo.png';
 
-function App()
-{
-  const [assets, setAssets] = useState([]);
+function App() {
+  const [primaryAsset, setPrimaryAsset] = useState(null);
+  const [associatedAsset, setAssociatedAsset] = useState(null);
+  const [documentToView, setDocumentToView] = useState(null); // New state for PDF split view
+  const [searchTag, setSearchTag] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(''); // New state for search input
-  const [selectedAsset, setSelectedAsset] = useState(null); // New state to hold the asset chosen for detail view
+  const [searchResults, setSearchResults] = useState([]);
 
-  const API_BASE_URL = 'http://localhost:5062/api';
-
-  // Function to fetch all assets (called on initial load)
-  useEffect(() =>
-    {
-    const fetchAllAssets = async () =>
-      {
-      try
-      {
-        const response = await fetch(`${API_BASE_URL}/Assets`);
-        if (!response.ok)
-        {
-          throw new Error(`HTTP error! status: ${response.status}`);
+  // This useEffect hook triggers a partial search every time the searchTag changes
+  useEffect(() => {
+    const fetchSearchResults = async () => {
+      if (searchTag.length > 2) {
+        try {
+          const response = await fetch(`http://localhost:5062/api/Assets/ByPartialTag/${searchTag}`);
+          if (response.ok) {
+            const data = await response.json();
+            setSearchResults(data);
+            setPrimaryAsset(null);
+            setAssociatedAsset(null);
+            setDocumentToView(null); // Clear document view on new search
+          } else {
+            setSearchResults([]);
+          }
+        } catch (err) {
+          console.error("Error fetching partial tags:", err);
+          setSearchResults([]);
         }
-        const data = await response.json();
-        setAssets(data.$values || []); // Access the $values array
-      }
-        catch (err)
-      {
-        console.error("Failed to fetch assets:", err);
-        setError(err.message);
-      }
-        finally
-      {
-        setLoading(false);
+      } else {
+        setSearchResults([]);
       }
     };
 
-    fetchAllAssets();
-  }, []); // Empty dependency array means this runs once on mount
+    const debounceTimer = setTimeout(fetchSearchResults, 300);
+    
+    return () => clearTimeout(debounceTimer);
+  }, [searchTag]);
 
-  // Function to handle asset search by tag number
-  const handleSearch = async () => {
-    if (!searchTerm) {
-      // If search term is empty, maybe refetch all assets or clear selectedAsset
-      setSelectedAsset(null); // Clear selected asset if search term is empty
-      // You might also want to refetch all assets here if you want to show the full list again
-      return;
-    }
+  // This function fetches the full asset details for a selected tag
+  const fetchAssetByTag = async (tagNumber, isPrimary = true) => {
     setLoading(true);
     setError(null);
+    setSearchResults([]);
+    setDocumentToView(null); // Clear document view when fetching a new asset
+
     try {
-      // New API endpoint for searching by tag number (we will create this on backend next)
-      const response = await fetch(`${API_BASE_URL}/Assets/ByTagNumber/${searchTerm}`);
+      const response = await fetch(`http://localhost:5062/api/Assets/${tagNumber}`);
+
       if (!response.ok) {
-        // If 404, it means asset not found, which is not an error for the fetch operation
-        if (response.status === 404) {
-          setSelectedAsset(null); // No asset found for this tag
-          setError(`Asset with Tag Number '${searchTerm}' not found.`);
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-      } else {
-        const data = await response.json();
-        // The API should ideally return a single asset object, not an array for ByTagNumber
-        setSelectedAsset(data); // Assuming API returns a single object
-        setAssets([]); // Clear the main assets list to show only the selected one
+        throw new Error('Asset not found');
       }
+
+      const data = await response.json();
+      if (isPrimary) {
+        setPrimaryAsset(data);
+        setAssociatedAsset(null);
+      } else {
+        setAssociatedAsset(data);
+      }
+      
+
     } catch (err) {
-      console.error("Failed to search assets:", err);
       setError(err.message);
-      setSelectedAsset(null);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSelectResult = (tagNumber) => {
+    setSearchTag(tagNumber);
+    fetchAssetByTag(tagNumber);
+  };
+  
+  // New handler for clicking an associated asset or document
+  const handleViewAssociatedItem = (item) => {
+    setDocumentToView(null); // Clear previous document view
+    if (item.associatedTagNumber) { // It's an asset relationship
+      fetchAssetByTag(item.associatedTagNumber, false);
+    } else if (item.filePath) { // It's a document or model
+      setAssociatedAsset(null); // Clear previous asset view
+      setDocumentToView(`http://localhost:5062${item.filePath}`);
+    }
+  };
+  
+  const closeAssociatedView = () => {
+    setAssociatedAsset(null);
+    setDocumentToView(null);
+  }
 
-if(loading) return <div>Loading Assets...</div>;
-// If there's an error and no selected asset (e.g., search failed)
-if(error && !selectedAsset) return <div>Error: {error}</div>;
-
-return (
-  <div className="App">
-    <img src={logo} className="logo" alt="logo"/>
-    <h1>Asset Management Dashboard</h1>
-
-    {/* Search functionality */}
-    <div>
-        <input
-            type="text"
-            placeholder="Search by Tag Number"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <button onClick={handleSearch}>Search</button>
-        {searchTerm && <button onClick={() => { setSearchTerm(''); setSelectedAsset(null); }}>Clear Search</button>}
-    </div>
-
-    <h2>Your Asset:</h2>
-    {selectedAsset ? (
-      <div className="asset-details-container">
-        <h3>Details for: {selectedAsset.assetName} (Tag: {selectedAsset.tagNumber})</h3>
-        
-        <div className="asset-details-grid">
-            <div className="detail-item"><strong>Description:</strong> <span>{selectedAsset.description}</span></div>
-            <div className="detail-item"><strong>Type:</strong> <span>{selectedAsset.assetType}</span></div>
-            <div className="detail-item"><strong>Manufacturer:</strong> <span>{selectedAsset.manufacturer}</span></div>
-            <div className="detail-item"><strong>Model:</strong> <span>{selectedAsset.model}</span></div>
-            <div className="detail-item"><strong>Serial Number:</strong> <span>{selectedAsset.serialNumber}</span></div>
-            <div className="detail-item"><strong>Size:</strong> <span>{selectedAsset.size}</span></div>
-            <div className="detail-item"><strong>Age:</strong> <span>{selectedAsset.age}</span></div>
-            <div className="detail-item"><strong>Installation Date:</strong> <span>{selectedAsset.installationDate ? new Date(selectedAsset.installationDate).toLocaleDateString() : 'N/A'}</span></div>
-            <div className="detail-item"><strong>Status:</strong> <span>{selectedAsset.currentStatus}</span></div>
-            <div className="detail-item"><strong>Validation Status:</strong> <span>{selectedAsset.validationStatus}</span></div>
-            <div className="detail-item"><strong>Maintenance:</strong> <span>{selectedAsset.lastMaintenanceDate ? `Last: ${new Date(selectedAsset.lastMaintenanceDate).toLocaleDateString()}` : 'N/A'} {selectedAsset.nextMaintenanceDate ? `| Next: ${new Date(selectedAsset.nextMaintenanceDate).toLocaleDateString()}` : ''}</span></div>
-            
-            {/* New fields from the model */}
-            <div className="detail-item"><strong>Area Code:</strong> <span>{selectedAsset.areaCode}</span></div>
-            <div className="detail-item"><strong>Deck/Platform:</strong> <span>{selectedAsset.deckPlatformCode}</span></div>
-            <div className="detail-item"><strong>Facility Sector:</strong> <span>{selectedAsset.facilitySector}</span></div>
-            <div className="detail-item"><strong>Service:</strong> <span>{selectedAsset.serviceDescription}</span></div>
-            <div className="detail-item"><strong>Site:</strong> <span>{selectedAsset.site}</span></div>
-            <div className="detail-item"><strong>System:</strong> <span>{selectedAsset.system}</span></div>
-            <div className="detail-item"><strong>Subsystem:</strong> <span>{selectedAsset.subsystem}</span></div>
-            <div className="detail-item"><strong>Functional Class ID:</strong> <span>{selectedAsset.functionalClassID}</span></div>
-            <div className="detail-item"><strong>Tag Format ID:</strong> <span>{selectedAsset.tagFormatID}</span></div>
-            <div className="detail-item"><strong>CMIMS Required:</strong> <span>{selectedAsset.cmimsRequired ? 'Yes' : 'No'}</span></div>
-            
-            {/* Boolean Flags Section */}
-            <div className="detail-item full-width">
-                <strong>Found In:</strong>
-                <ul>
-                    {selectedAsset.foundInADiagrams && <li>A-Diagrams</li>}
-                    {selectedAsset.foundInADL && <li>ADL</li>}
-                    {selectedAsset.foundInAEngineering && <li>A-Engineering</li>}
-                    {selectedAsset.foundInAVEVAE3D && <li>AVEVA E3D</li>}
-                    {selectedAsset.foundInAVEVAElectricalAndInstrumentation && <li>AVEVA E&I</li>}
-                    {selectedAsset.foundInEDMS && <li>EDMS</li>}
-                    {selectedAsset.foundInPiVision && <li>PiVision</li>}
-                </ul>
-            </div>
+  return (
+    <div className="App">
+      <header className="App-header">
+        <div className="logo-container">
+          <img src={logo} className="App-logo" alt="logo" />
         </div>
+        <h1>Asset Management Dashboard</h1>
+        <div className="search-container">
+          <input
+            type="text"
+            value={searchTag}
+            onChange={(e) => setSearchTag(e.target.value)}
+            placeholder="Search by Tag Number (e.g., TAG-001)"
+          />
+          <button onClick={() => { setSearchTag(''); setPrimaryAsset(null); setAssociatedAsset(null); setDocumentToView(null); setSearchResults([]); }} className="clear-button">Clear Search</button>
+          
+          {searchResults.length > 0 && (
+            <ul className="autocomplete-dropdown">
+              {searchResults.map((asset, index) => (
+                <li key={index} onClick={() => handleSelectResult(asset.tagNumber)}>
+                  {asset.tagNumber} - {asset.assetName}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </header>
 
-        {/* --- Associated Items --- */}
-        <h4>Associated Documents:</h4>
-        {selectedAsset.documents && selectedAsset.documents.$values.length > 0 ? (
-          <ul>
-            {selectedAsset.documents.$values.map(doc => (
-              <li key={doc.id}>{doc.fileName}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No documents found.</p>
+      <main>
+        {loading && <p className="loading">Loading Asset...</p>}
+        {error && <p className="error">{error}</p>}
+
+        {!loading && !error && (
+          <div className="asset-view-container">
+            
+            {primaryAsset && (
+              <div className="asset-card primary-asset-card">
+                <h3>Primary Asset:</h3>
+                <div className="asset-details">
+                  <h4>{primaryAsset.assetName} (Tag: {primaryAsset.tagNumber})</h4>
+                  <p><strong>Description:</strong> {primaryAsset.description}</p>
+                  <p><strong>Asset Type:</strong> {primaryAsset.assetType}</p>
+                  <p><strong>Manufacturer:</strong> {primaryAsset.manufacturer}</p>
+                  <p><strong>Model:</strong> {primaryAsset.model}</p>
+                  <p><strong>Serial Number:</strong> {primaryAsset.serialNumber}</p>
+                  <p><strong>Size:</strong> {primaryAsset.size}</p>
+                  <p><strong>Age:</strong> {primaryAsset.age} years</p>
+                  <p><strong>Installation Date:</strong> {new Date(primaryAsset.installationDate).toLocaleDateString()}</p>
+                  <p><strong>Status:</strong> {primaryAsset.status}</p>
+                  <p><strong>Validation Status:</strong> {primaryAsset.validationStatus}</p>
+                  <p><strong>Last Maintenance:</strong> {new Date(primaryAsset.lastMaintenance).toLocaleDateString()}</p>
+                  <p><strong>Site:</strong> {primaryAsset.site}</p>
+                  <p><strong>Deck/Platform:</strong> {primaryAsset.deckPlatform}</p>
+                  <p><strong>Area Code:</strong> {primaryAsset.areaCode}</p>
+                  <p><strong>System:</strong> {primaryAsset.system}</p>
+                  <p><strong>Facility Section:</strong> {primaryAsset.facilitySection}</p>
+                  <p><strong>Functional Class ID:</strong> {primaryAsset.functionalClassID}</p>
+                  <p><strong>Subsystem:</strong> {primaryAsset.subsystem}</p>
+                  <p><strong>CMMMS Required:</strong> {primaryAsset.cmmmsRequired}</p>
+                  <p><strong>Tag Format ID:</strong> {primaryAsset.tagFormatID}</p>
+                  <p><strong>Created At:</strong> {new Date(primaryAsset.createdAt).toLocaleString()}</p>
+                  <p><strong>Updated At:</strong> {new Date(primaryAsset.updatedAt).toLocaleString()}</p>
+                  
+                  {primaryAsset.assetRelationships?.length > 0 && (
+                    <div className="associated-items-list">
+                      <h5>Associated Assets:</h5>
+                      <ul>
+                        {primaryAsset.assetRelationships.map(item => (
+                          <li key={item.id} onClick={() => handleViewAssociatedItem(item)}>
+                            {item.associatedTagNumber} - Type: {item.relationshipType}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {primaryAsset.assetDocuments?.length > 0 && (
+                    <div className="associated-items-list">
+                      <h5>Documents:</h5>
+                      <ul>
+                        {primaryAsset.assetDocuments.map(doc => (
+                          <li key={doc.id} onClick={() => handleViewAssociatedItem(doc)}>
+                            {doc.tagNumber}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {primaryAsset.asset2DModels?.length > 0 && (
+                    <div className="associated-items-list">
+                      <h5>2D Models:</h5>
+                      <ul>
+                        {primaryAsset.asset2DModels.map(model => (
+                          <li key={model.id} onClick={() => handleViewAssociatedItem(model)}>
+                            {model.tagNumber}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {primaryAsset.asset3DModels?.length > 0 && (
+                    <div className="associated-items-list">
+                      <h5>3D Models:</h5>
+                      <ul>
+                        {primaryAsset.asset3DModels.map(model => (
+                          <li key={model.id}>
+                            {model.tagNumber}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {(associatedAsset || documentToView) && (
+              <div className="asset-card associated-asset-card">
+                <div className="card-header">
+                  <h3>
+                    {associatedAsset ? 'Associated Asset' : 'Document'}
+                    <button className="close-button" onClick={closeAssociatedView}>X</button>
+                  </h3>
+                </div>
+                
+                {associatedAsset && (
+                  <div className="asset-details">
+                    <h4>{associatedAsset.assetName} (Tag: {associatedAsset.tagNumber})</h4>
+                    <p><strong>Description:</strong> {associatedAsset.description}</p>
+                    <p><strong>Asset Type:</strong> {associatedAsset.assetType}</p>
+                    {/* ... other details for associatedAsset ... */}
+                    <p><strong>Manufacturer:</strong> {associatedAsset.manufacturer}</p>
+                    <p><strong>Model:</strong> {associatedAsset.model}</p>
+                    <p><strong>Serial Number:</strong> {associatedAsset.serialNumber}</p>
+                    <p><strong>Size:</strong> {associatedAsset.size}</p>
+                    <p><strong>Age:</strong> {associatedAsset.age} years</p>
+                    <p><strong>Installation Date:</strong> {new Date(associatedAsset.installationDate).toLocaleDateString()}</p>
+                    <p><strong>Status:</strong> {associatedAsset.status}</p>
+                    <p><strong>Validation Status:</strong> {associatedAsset.validationStatus}</p>
+                    <p><strong>Last Maintenance:</strong> {new Date(associatedAsset.lastMaintenance).toLocaleDateString()}</p>
+                    <p><strong>Site:</strong> {associatedAsset.site}</p>
+                    <p><strong>Deck/Platform:</strong> {associatedAsset.deckPlatform}</p>
+                    <p><strong>Area Code:</strong> {associatedAsset.areaCode}</p>
+                    <p><strong>System:</strong> {associatedAsset.system}</p>
+                    <p><strong>Facility Section:</strong> {associatedAsset.facilitySection}</p>
+                    <p><strong>Functional Class ID:</strong> {associatedAsset.functionalClassID}</p>
+                    <p><strong>Subsystem:</strong> {associatedAsset.subsystem}</p>
+                    <p><strong>CMMMS Required:</strong> {associatedAsset.cmmmsRequired}</p>
+                    <p><strong>Tag Format ID:</strong> {associatedAsset.tagFormatID}</p>
+                    <p><strong>Created At:</strong> {new Date(associatedAsset.createdAt).toLocaleString()}</p>
+                    <p><strong>Updated At:</strong> {new Date(associatedAsset.updatedAt).toLocaleString()}</p>
+                  </div>
+                )}
+
+                {documentToView && (
+                  <div className="document-viewer">
+                    <iframe src={documentToView} title="Document Viewer" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {primaryAsset === null && searchTag.length > 2 && searchResults.length === 0 && (
+          <p>No Assets Found matching "{searchTag}"</p>
         )}
 
-        <h4>Associated 3D Models:</h4>
-        {selectedAsset.threeDModels && selectedAsset.threeDModels.$values.length > 0 ? (
-          <ul>
-            {selectedAsset.threeDModels.$values.map(model => (
-              <li key={model.id}>{model.fileName}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No 3D models found.</p>
+        {primaryAsset === null && searchTag.length === 0 && searchResults.length === 0 && (
+          <p>Start typing to search for assets.</p>
         )}
-
-        <h4>Associated 2D Drawings:</h4>
-        {selectedAsset.twoDModels && selectedAsset.twoDModels.$values.length > 0 ? (
-          <ul>
-            {selectedAsset.twoDModels.$values.map(drawing => (
-              <li key={drawing.id}>{drawing.fileName}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No 2D drawings found.</p>
-        )}
-
-      </div>
-    ) : (
-        // ... (rest of the code for displaying the list of all assets or "No Asset Found")
-        // This part remains the same.
-        Array.isArray(assets) && assets.length === 0 ? (
-            <p>No Asset Found.</p>
-        ) : (
-            Array.isArray(assets) && (
-                <ul>
-                    {assets.map(assetItem => (
-                        <li key={assetItem.tagNumber}>
-                            <strong>{assetItem.assetName}</strong> (Tag: {assetItem.tagNumber}) - Type: {assetItem.assetType}
-                        </li>
-                    ))}
-                </ul>
-            )
-        )
-    )}
-  </div>
-);
+      </main>
+    </div>
+  );
 }
+
 export default App;
