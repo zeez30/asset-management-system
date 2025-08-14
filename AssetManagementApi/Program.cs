@@ -42,6 +42,9 @@ app.UseHttpsRedirection();
 // Use the CORS policy
 app.UseCors("CorsPolicy");
 
+// ADDED: This line enables serving of static files from the wwwroot folder
+app.UseStaticFiles();
+
 app.UseAuthorization();
 
 app.MapControllers();
