@@ -1,144 +1,242 @@
-/* File: asset-management-frontend/src/App.css */
-
-/* Basic body and root styling */
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  color: #333;
-  background-color: #f4f4f9;
-  line-height: 1.6;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f0f2f5;
 }
 
-/* Headings with your dark blue color */
-h1, h2, h3, h4 {
-  color: #0f4b91; /* Dark Blue from your scheme */
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-}
-
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.25rem; }
-
-/* Main content container with shadow and background */
 .App {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-  margin-top: 2rem;
-}
-
-/* Logo styling */
-.App .logo {
-  height: 6em;
-  width: auto;
-  will-change: filter;
-  transition: filter 300ms;
-  margin-bottom: -1rem;
-}
-
-.App .logo:hover {
-  filter: drop-shadow(0 0 2em #4cc1bb); /* Teal shadow on hover */
-}
-
-/* Search and Upload sections styling with light gray divider */
-.App > div:first-of-type {
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #dcc7b7; /* Light Gray from your scheme */
-  padding-bottom: 2rem;
-}
-
-input[type="text"],
-button {
-  padding: 0.75rem 1.25rem;
-  font-size: 1rem;
-  border: 1px solid #dcc7b7;
-  border-radius: 6px;
-  margin: 0.25rem;
-}
-
-/* Button styling with dark blue and teal hover effect */
-button {
-  background-color: #0f4b91; /* Dark Blue from your scheme */
-  color: white;
-  cursor: pointer;
-  border: none;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #4cc1bb; /* Teal from your scheme */
-}
-
-/* Asset details container and grid layout */
-.asset-details-container {
   text-align: left;
 }
 
-.asset-details-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem 2rem;
-  margin-bottom: 2rem;
-}
-
-.detail-item {
+.App-header {
+  background-color: #fff;
+  padding: 20px 40px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: column;
-  margin-bottom: 0.5rem;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.detail-item strong {
-  color: #6f6259; /* Dark Gray from your scheme */
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
+.header-info-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.detail-item span {
-  font-size: 1rem;
-  color: #333;
+.logo-container {
+  margin-right: 0;
 }
 
-.full-width {
-  grid-column: 1 / -1;
+.App-logo {
+  height: 80px;
+}
+
+h1 {
+  color: #0F4B91;
+  font-size: 24px;
+  margin: 0;
+}
+
+.search-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.search-container input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
   text-align: left;
 }
 
-/* Tag styling for the boolean flags */
-.tag {
-  display: inline-block;
-  background-color: #006e43; /* Dark Green from your scheme */
+.autocomplete-dropdown li {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.autocomplete-dropdown li:hover {
+  background-color: #f0f2f5;
+}
+
+.search-button {
+  padding: 8px 16px;
+  background-color: #0F4B91;
   color: white;
-  padding: 4px 8px;
+  border: none;
   border-radius: 4px;
-  font-size: 0.8rem;
+  cursor: pointer;
 }
 
-/* Associated Items Lists */
-h4 {
-  border-bottom: 2px solid #dcc7b7;
-  padding-bottom: 0.5rem;
-  margin-top: 2rem;
+.clear-button {
+  padding: 8px 16px;
+  background-color: #f4f4f4;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-ul {
+main {
+  padding: 20px;
+  max-width: 95%;
+  margin: 20px auto;
+}
+
+.asset-view-container {
+  display: flex;
+  justify-content: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.asset-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: left;
+  min-width: 400px;
+}
+
+.primary-asset-card {
+  flex: 1;
+}
+
+.associated-asset-card {
+  position: relative;
+  flex: 2;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  color: #333;
+  margin-top: 0;
+}
+
+.close-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: #c82333;
+}
+
+.asset-details {
+  margin-top: 15px;
+}
+
+.associated-items-list {
+  margin-top: 20px;
+}
+
+.associated-items-list h5 {
+  margin-bottom: 5px;
+}
+
+.associated-items-list ul {
   list-style-type: none;
   padding: 0;
-  margin-top: 0.5rem;
 }
 
-li {
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
+.associated-items-list li {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 8px;
+  margin-bottom: 5px;
   border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.associated-items-list li:hover {
+  background-color: #e2e6ea;
+}
+
+.loading, .error {
+  margin-top: 20px;
+}
+
+.error {
+  color: red;
+}
+
+.document-viewer {
+  width: 100%;
+  height: 95vh;
+  margin-top: 20px;
+}
+
+.document-viewer iframe {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+@media (max-width: 992px) {
+  .App-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-info-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .search-container {
+    margin-top: 10px;
+    max-width: none;
+  }
+  
+  .asset-view-container {
+    flex-direction: column;
+  }
+  
+  .asset-card {
+    flex: 1 1 100%;
+  }
 }
