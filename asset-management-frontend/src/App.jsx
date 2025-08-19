@@ -12,7 +12,7 @@ function App() {
   const [error, setError] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [formMessage, setFormMessage] = useState('');
-  
+
   // New state for conditional rendering
   const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -70,7 +70,7 @@ function App() {
     };
 
     const debounceTimer = setTimeout(fetchSearchResults, 300);
-    
+
     return () => clearTimeout(debounceTimer);
   }, [searchTag]);
 
@@ -81,7 +81,7 @@ function App() {
     setSearchResults([]);
     setDocumentToView(null);
     setDocumentToView2D(null);
-    
+
     try {
       const response = await fetch(`http://localhost:5062/api/Assets/${tagNumber}`);
 
@@ -108,7 +108,7 @@ function App() {
     setSearchTag(tagNumber);
     fetchAssetByTag(tagNumber);
   };
-  
+
   // Click handler for associated assets, documents, and 2D models
   const handleViewAssociatedItem = (item) => {
     setDocumentToView(null);
@@ -123,7 +123,7 @@ function App() {
       setDocumentToView(`http://localhost:5062${item.filePath}`);
     }
   };
-  
+
   // Function to close the split views
   const closeAssociatedView = (type) => {
     if (type === 'asset') {
@@ -152,7 +152,7 @@ function App() {
       setNewAsset2DModels(Array.from(e.target.files));
     }
   };
-  
+
   // Handle form submission
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -245,7 +245,7 @@ function App() {
             placeholder="Search by Tag Number (e.g., TAG-001)"
           />
           <button onClick={() => { setSearchTag(''); setPrimaryAsset(null); setAssociatedAsset(null); setDocumentToView(null); setDocumentToView2D(null); setSearchResults([]); }} className="clear-button">Clear Search</button>
-          
+
           {/* New Button to show the form */}
           <button onClick={() => setShowCreateForm(true)} className="create-button">Add New Asset</button>
 
@@ -268,7 +268,7 @@ function App() {
         {/* Conditional rendering for the main content */}
         {!loading && !error && !showCreateForm && (
           <div className="asset-view-container">
-            
+
             {primaryAsset && (
               <div className="asset-card primary-asset-card">
                 <h3>Primary Asset:</h3>
@@ -296,7 +296,7 @@ function App() {
                   <p><strong>Tag Format ID:</strong> {primaryAsset.tagFormatID}</p>
                   <p><strong>Created At:</strong> {new Date(primaryAsset.createdAt).toLocaleString()}</p>
                   <p><strong>Updated At:</strong> {new Date(primaryAsset.updatedAt).toLocaleString()}</p>
-                  
+
                   {primaryAsset.assetRelationships?.length > 0 && (
                     <div className="associated-items-list">
                       <h5>Associated Assets:</h5>
@@ -316,7 +316,7 @@ function App() {
                       <ul>
                         {primaryAsset.assetDocuments.map(doc => (
                           <li key={doc.id} onClick={() => handleViewAssociatedItem(doc)}>
-                            {doc.filePath.split('/').pop()}
+                            {doc.originalFileName}
                           </li>
                         ))}
                       </ul>
@@ -329,20 +329,20 @@ function App() {
                       <ul>
                         {primaryAsset.asset2DModels.map(model => (
                           <li key={model.id} onClick={() => handleViewAssociatedItem({...model, is2DModel: true})}>
-                            {model.filePath.split('/').pop()}
+                            {model.originalFileName}
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  
+
                   {primaryAsset.asset3DModels?.length > 0 && (
                     <div className="associated-items-list">
                       <h5>3D Models:</h5>
                       <ul>
                         {primaryAsset.asset3DModels.map(model => (
                           <li key={model.id}>
-                            {model.filePath.split('/').pop()}
+                            {model.originalFileName} {/* CORRECTED: This line now uses originalFileName */}
                           </li>
                         ))}
                       </ul>
@@ -351,7 +351,7 @@ function App() {
                 </div>
               </div>
             )}
-            
+
             {(associatedAsset || documentToView) && (
               <div className="asset-card associated-asset-card">
                 <div className="card-header">
@@ -360,7 +360,7 @@ function App() {
                     <button className="close-button" onClick={() => closeAssociatedView(associatedAsset ? 'asset' : 'document')}>X</button>
                   </h3>
                 </div>
-                
+
                 {associatedAsset && (
                   <div className="asset-details">
                     <h4>{associatedAsset.assetName} (Tag: {associatedAsset.tagNumber})</h4>
@@ -396,7 +396,7 @@ function App() {
                 )}
               </div>
             )}
-            
+
             {documentToView2D && (
                 <div className="asset-card associated-2dmodel-card">
                     <div className="card-header">
@@ -412,7 +412,7 @@ function App() {
             )}
           </div>
         )}
-        
+
         {primaryAsset === null && searchTag.length > 2 && searchResults.length === 0 && (
           <p>No Assets Found matching "{searchTag}"</p>
         )}
@@ -420,7 +420,7 @@ function App() {
         {primaryAsset === null && searchTag.length === 0 && searchResults.length === 0 && !showCreateForm && (
           <p>Start typing to search for assets.</p>
         )}
-        
+
         {/* === NEW ADD ASSET FORM (Conditional Render) === */}
         {showCreateForm && (
           <div className="add-asset-container">
@@ -513,25 +513,25 @@ function App() {
                 <label htmlFor="tagFormatID">Tag Format ID:</label>
                 <input type="text" id="tagFormatID" name="tagFormatID" value={newAsset.tagFormatID} onChange={handleInputChange} />
               </div>
-              
+
               {/* File Uploads */}
               <div className="form-group">
                 <label htmlFor="assetDocuments">Documents (PDF, etc.):</label>
                 <input type="file" id="assetDocuments" name="assetDocuments" onChange={(e) => handleFileChange(e, 'documents')} multiple />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="asset2DModels">2D Models (CAD, etc.):</label>
                 <input type="file" id="asset2DModels" name="asset2DModels" onChange={(e) => handleFileChange(e, '2dmodels')} multiple />
               </div>
-              
+
               <button type="submit" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Asset'}
               </button>
               <button type="button" onClick={() => setShowCreateForm(false)}>Cancel</button>
-              
+
               {formMessage && <p>{formMessage}</p>}
-              
+
             </form>
           </div>
         )}

@@ -140,9 +140,7 @@ main {
   flex: 1;
 }
 
-.primary-asset-card {
-  /* No change needed as it will now be handled by .asset-card */
-}
+
 
 .associated-asset-card {
   position: relative;

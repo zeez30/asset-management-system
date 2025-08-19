@@ -4,6 +4,7 @@ using AssetManagementApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AssetManagementApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250818071142_FinalSchemaFix")]
+    partial class FinalSchemaFix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,30 +24,6 @@ namespace AssetManagementApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Asset3DModels", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AssetTagNumber")
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OriginalFileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetTagNumber");
-
-                    b.ToTable("Asset3DModels");
-                });
 
             modelBuilder.Entity("AssetManagementApi.Models.Asset", b =>
                 {
@@ -158,9 +137,6 @@ namespace AssetManagementApi.Migrations
                     b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("OriginalFileName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AssetTagNumber");
@@ -168,6 +144,33 @@ namespace AssetManagementApi.Migrations
                     b.HasIndex("AssetTagNumber1");
 
                     b.ToTable("Asset2DModels");
+                });
+
+            modelBuilder.Entity("AssetManagementApi.Models.Asset3DModels", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ModelType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TagNumber")
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TagNumber");
+
+                    b.ToTable("Asset3DModels");
                 });
 
             modelBuilder.Entity("AssetManagementApi.Models.AssetDocuments", b =>
@@ -179,9 +182,6 @@ namespace AssetManagementApi.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OriginalFileName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -223,15 +223,6 @@ namespace AssetManagementApi.Migrations
                     b.ToTable("AssetRelationships");
                 });
 
-            modelBuilder.Entity("Asset3DModels", b =>
-                {
-                    b.HasOne("AssetManagementApi.Models.Asset", "Asset")
-                        .WithMany("Asset3DModels")
-                        .HasForeignKey("AssetTagNumber");
-
-                    b.Navigation("Asset");
-                });
-
             modelBuilder.Entity("AssetManagementApi.Models.Asset2DModels", b =>
                 {
                     b.HasOne("AssetManagementApi.Models.Asset", "Asset")
@@ -241,6 +232,15 @@ namespace AssetManagementApi.Migrations
                     b.HasOne("AssetManagementApi.Models.Asset", null)
                         .WithMany("Asset2DModels")
                         .HasForeignKey("AssetTagNumber1");
+
+                    b.Navigation("Asset");
+                });
+
+            modelBuilder.Entity("AssetManagementApi.Models.Asset3DModels", b =>
+                {
+                    b.HasOne("AssetManagementApi.Models.Asset", "Asset")
+                        .WithMany("Asset3DModels")
+                        .HasForeignKey("TagNumber");
 
                     b.Navigation("Asset");
                 });
