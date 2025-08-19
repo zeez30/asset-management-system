@@ -5,13 +5,46 @@ import logo from './assets/noc_logo.png';
 function App() {
   const [primaryAsset, setPrimaryAsset] = useState(null);
   const [associatedAsset, setAssociatedAsset] = useState(null);
-  const [documentToView, setDocumentToView] = useState(null); // New state for PDF split view
+  const [documentToView, setDocumentToView] = useState(null);
+  const [documentToView2D, setDocumentToView2D] = useState(null);
   const [searchTag, setSearchTag] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
+  const [formMessage, setFormMessage] = useState('');
 
-  // This useEffect hook triggers a partial search every time the searchTag changes
+  // New state for conditional rendering
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  // New states for the form
+  const [newAsset, setNewAsset] = useState({
+    tagNumber: '',
+    assetName: '',
+    description: '',
+    assetType: '',
+    manufacturer: '',
+    model: '',
+    serialNumber: '',
+    size: '',
+    installationDate: '',
+    status: '',
+    validationStatus: '',
+    lastMaintenance: '',
+    site: '',
+    deckPlatform: '',
+    areaCode: '',
+    system: '',
+    facilitySection: '',
+    functionalClassID: '',
+    subsystem: '',
+    cmmmsRequired: '',
+    tagFormatID: '',
+  });
+
+  const [newAssetDocuments, setNewAssetDocuments] = useState([]);
+  const [newAsset2DModels, setNewAsset2DModels] = useState([]);
+
+  // useEffect for debounced search
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (searchTag.length > 2) {
@@ -22,7 +55,8 @@ function App() {
             setSearchResults(data);
             setPrimaryAsset(null);
             setAssociatedAsset(null);
-            setDocumentToView(null); // Clear document view on new search
+            setDocumentToView(null);
+            setDocumentToView2D(null);
           } else {
             setSearchResults([]);
           }
@@ -36,16 +70,17 @@ function App() {
     };
 
     const debounceTimer = setTimeout(fetchSearchResults, 300);
-    
+
     return () => clearTimeout(debounceTimer);
   }, [searchTag]);
 
-  // This function fetches the full asset details for a selected tag
+  // Function to fetch a single asset by tag
   const fetchAssetByTag = async (tagNumber, isPrimary = true) => {
     setLoading(true);
     setError(null);
     setSearchResults([]);
-    setDocumentToView(null); // Clear document view when fetching a new asset
+    setDocumentToView(null);
+    setDocumentToView2D(null);
 
     try {
       const response = await fetch(`http://localhost:5062/api/Assets/${tagNumber}`);
@@ -61,8 +96,6 @@ function App() {
       } else {
         setAssociatedAsset(data);
       }
-      
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -70,34 +103,140 @@ function App() {
     }
   };
 
+  // Click handler for autocomplete results
   const handleSelectResult = (tagNumber) => {
     setSearchTag(tagNumber);
     fetchAssetByTag(tagNumber);
   };
-  
-  // New handler for clicking an associated asset or document
+
+  // Click handler for associated assets, documents, and 2D models
   const handleViewAssociatedItem = (item) => {
-    setDocumentToView(null); // Clear previous document view
-    if (item.associatedTagNumber) { // It's an asset relationship
+    setDocumentToView(null);
+    setAssociatedAsset(null);
+    setDocumentToView2D(null);
+
+    if (item.associatedTagNumber) {
       fetchAssetByTag(item.associatedTagNumber, false);
-    } else if (item.filePath) { // It's a document or model
-      setAssociatedAsset(null); // Clear previous asset view
+    } else if (item.filePath && item.is2DModel) {
+      setDocumentToView2D(`http://localhost:5062${item.filePath}`);
+    } else if (item.filePath) {
       setDocumentToView(`http://localhost:5062${item.filePath}`);
     }
   };
-  
-  const closeAssociatedView = () => {
-    setAssociatedAsset(null);
-    setDocumentToView(null);
+
+  // Function to close the split views
+  const closeAssociatedView = (type) => {
+    if (type === 'asset') {
+        setAssociatedAsset(null);
+    } else if (type === 'document') {
+        setDocumentToView(null);
+    } else if (type === '2dmodel') {
+        setDocumentToView2D(null);
+    }
   }
+
+  // Handle input changes for the form fields
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewAsset(prevAsset => ({
+      ...prevAsset,
+      [name]: value
+    }));
+  };
+
+  // Handle file changes for the file inputs
+  const handleFileChange = (e, fileType) => {
+    if (fileType === 'documents') {
+      setNewAssetDocuments(Array.from(e.target.files));
+    } else if (fileType === '2dmodels') {
+      setNewAsset2DModels(Array.from(e.target.files));
+    }
+  };
+
+  // Handle form submission
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setFormMessage('');
+
+    // Create a FormData object to send multipart/form-data
+    const formData = new FormData();
+
+    // Append all text fields
+    for (const key in newAsset) {
+      if (newAsset[key]) {
+        formData.append(key, newAsset[key]);
+      }
+    }
+
+    // Append all document files
+    newAssetDocuments.forEach((file) => {
+      formData.append('AssetDocuments', file);
+    });
+
+    // Append all 2D model files
+    newAsset2DModels.forEach((file) => {
+      formData.append('Asset2DModels', file);
+    });
+
+    try {
+      const response = await fetch('http://localhost:5062/api/Assets', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setFormMessage('Asset created successfully!');
+        // Automatically fetch and display the newly created asset
+        fetchAssetByTag(newAsset.tagNumber);
+        // Hide the form after submission
+        setShowCreateForm(false);
+        // Clear the form
+        setNewAsset({
+          tagNumber: '',
+          assetName: '',
+          description: '',
+          assetType: '',
+          manufacturer: '',
+          model: '',
+          serialNumber: '',
+          size: '',
+          installationDate: '',
+          status: '',
+          validationStatus: '',
+          lastMaintenance: '',
+          site: '',
+          deckPlatform: '',
+          areaCode: '',
+          system: '',
+          facilitySection: '',
+          functionalClassID: '',
+          subsystem: '',
+          cmmmsRequired: '',
+          tagFormatID: '',
+        });
+        setNewAssetDocuments([]);
+        setNewAsset2DModels([]);
+      } else {
+        const errorData = await response.json();
+        setFormMessage(`Error: ${JSON.stringify(errorData)}`);
+      }
+    } catch (error) {
+      setFormMessage(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="App">
       <header className="App-header">
-        <div className="logo-container">
-          <img src={logo} className="App-logo" alt="logo" />
+        <div className="header-info-container">
+          <div className="logo-container">
+            <img src={logo} className="App-logo" alt="logo" />
+          </div>
+          <h1>Asset Management Dashboard</h1>
         </div>
-        <h1>Asset Management Dashboard</h1>
         <div className="search-container">
           <input
             type="text"
@@ -105,8 +244,11 @@ function App() {
             onChange={(e) => setSearchTag(e.target.value)}
             placeholder="Search by Tag Number (e.g., TAG-001)"
           />
-          <button onClick={() => { setSearchTag(''); setPrimaryAsset(null); setAssociatedAsset(null); setDocumentToView(null); setSearchResults([]); }} className="clear-button">Clear Search</button>
-          
+          <button onClick={() => { setSearchTag(''); setPrimaryAsset(null); setAssociatedAsset(null); setDocumentToView(null); setDocumentToView2D(null); setSearchResults([]); }} className="clear-button">Clear Search</button>
+
+          {/* New Button to show the form */}
+          <button onClick={() => setShowCreateForm(true)} className="create-button">Add New Asset</button>
+
           {searchResults.length > 0 && (
             <ul className="autocomplete-dropdown">
               {searchResults.map((asset, index) => (
@@ -123,9 +265,10 @@ function App() {
         {loading && <p className="loading">Loading Asset...</p>}
         {error && <p className="error">{error}</p>}
 
-        {!loading && !error && (
+        {/* Conditional rendering for the main content */}
+        {!loading && !error && !showCreateForm && (
           <div className="asset-view-container">
-            
+
             {primaryAsset && (
               <div className="asset-card primary-asset-card">
                 <h3>Primary Asset:</h3>
@@ -153,7 +296,7 @@ function App() {
                   <p><strong>Tag Format ID:</strong> {primaryAsset.tagFormatID}</p>
                   <p><strong>Created At:</strong> {new Date(primaryAsset.createdAt).toLocaleString()}</p>
                   <p><strong>Updated At:</strong> {new Date(primaryAsset.updatedAt).toLocaleString()}</p>
-                  
+
                   {primaryAsset.assetRelationships?.length > 0 && (
                     <div className="associated-items-list">
                       <h5>Associated Assets:</h5>
@@ -173,7 +316,7 @@ function App() {
                       <ul>
                         {primaryAsset.assetDocuments.map(doc => (
                           <li key={doc.id} onClick={() => handleViewAssociatedItem(doc)}>
-                            {doc.tagNumber}
+                            {doc.originalFileName}
                           </li>
                         ))}
                       </ul>
@@ -185,21 +328,21 @@ function App() {
                       <h5>2D Models:</h5>
                       <ul>
                         {primaryAsset.asset2DModels.map(model => (
-                          <li key={model.id} onClick={() => handleViewAssociatedItem(model)}>
-                            {model.tagNumber}
+                          <li key={model.id} onClick={() => handleViewAssociatedItem({...model, is2DModel: true})}>
+                            {model.originalFileName}
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  
+
                   {primaryAsset.asset3DModels?.length > 0 && (
                     <div className="associated-items-list">
                       <h5>3D Models:</h5>
                       <ul>
                         {primaryAsset.asset3DModels.map(model => (
                           <li key={model.id}>
-                            {model.tagNumber}
+                            {model.originalFileName} {/* CORRECTED: This line now uses originalFileName */}
                           </li>
                         ))}
                       </ul>
@@ -208,22 +351,21 @@ function App() {
                 </div>
               </div>
             )}
-            
+
             {(associatedAsset || documentToView) && (
               <div className="asset-card associated-asset-card">
                 <div className="card-header">
                   <h3>
                     {associatedAsset ? 'Associated Asset' : 'Document'}
-                    <button className="close-button" onClick={closeAssociatedView}>X</button>
+                    <button className="close-button" onClick={() => closeAssociatedView(associatedAsset ? 'asset' : 'document')}>X</button>
                   </h3>
                 </div>
-                
+
                 {associatedAsset && (
                   <div className="asset-details">
                     <h4>{associatedAsset.assetName} (Tag: {associatedAsset.tagNumber})</h4>
                     <p><strong>Description:</strong> {associatedAsset.description}</p>
                     <p><strong>Asset Type:</strong> {associatedAsset.assetType}</p>
-                    {/* ... other details for associatedAsset ... */}
                     <p><strong>Manufacturer:</strong> {associatedAsset.manufacturer}</p>
                     <p><strong>Model:</strong> {associatedAsset.model}</p>
                     <p><strong>Serial Number:</strong> {associatedAsset.serialNumber}</p>
@@ -254,16 +396,146 @@ function App() {
                 )}
               </div>
             )}
+
+            {documentToView2D && (
+                <div className="asset-card associated-2dmodel-card">
+                    <div className="card-header">
+                        <h3>
+                            2D Model
+                            <button className="close-button" onClick={() => closeAssociatedView('2dmodel')}>X</button>
+                        </h3>
+                    </div>
+                    <div className="document-viewer">
+                        <iframe src={documentToView2D} title="2D Model Viewer" />
+                    </div>
+                </div>
+            )}
           </div>
         )}
-        
+
         {primaryAsset === null && searchTag.length > 2 && searchResults.length === 0 && (
           <p>No Assets Found matching "{searchTag}"</p>
         )}
 
-        {primaryAsset === null && searchTag.length === 0 && searchResults.length === 0 && (
+        {primaryAsset === null && searchTag.length === 0 && searchResults.length === 0 && !showCreateForm && (
           <p>Start typing to search for assets.</p>
         )}
+
+        {/* === NEW ADD ASSET FORM (Conditional Render) === */}
+        {showCreateForm && (
+          <div className="add-asset-container">
+            <div className="card-header">
+                <h2>Add New Asset</h2>
+                <button className="close-button" onClick={() => setShowCreateForm(false)}>X</button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="add-asset-form">
+              <div className="form-group">
+                <label htmlFor="tagNumber">Tag Number:</label>
+                <input type="text" id="tagNumber" name="tagNumber" value={newAsset.tagNumber} onChange={handleInputChange} required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="assetName">Asset Name:</label>
+                <input type="text" id="assetName" name="assetName" value={newAsset.assetName} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="description">Description:</label>
+                <textarea id="description" name="description" value={newAsset.description} onChange={handleInputChange}></textarea>
+              </div>
+              <div className="form-group">
+                <label htmlFor="assetType">Asset Type:</label>
+                <input type="text" id="assetType" name="assetType" value={newAsset.assetType} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="manufacturer">Manufacturer:</label>
+                <input type="text" id="manufacturer" name="manufacturer" value={newAsset.manufacturer} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="model">Model:</label>
+                <input type="text" id="model" name="model" value={newAsset.model} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="serialNumber">Serial Number:</label>
+                <input type="text" id="serialNumber" name="serialNumber" value={newAsset.serialNumber} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="size">Size:</label>
+                <input type="text" id="size" name="size" value={newAsset.size} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="installationDate">Installation Date:</label>
+                <input type="date" id="installationDate" name="installationDate" value={newAsset.installationDate} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="status">Status:</label>
+                <input type="text" id="status" name="status" value={newAsset.status} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="validationStatus">Validation Status:</label>
+                <input type="text" id="validationStatus" name="validationStatus" value={newAsset.validationStatus} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="lastMaintenance">Last Maintenance:</label>
+                <input type="date" id="lastMaintenance" name="lastMaintenance" value={newAsset.lastMaintenance} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="site">Site:</label>
+                <input type="text" id="site" name="site" value={newAsset.site} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="deckPlatform">Deck/Platform:</label>
+                <input type="text" id="deckPlatform" name="deckPlatform" value={newAsset.deckPlatform} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="areaCode">Area Code:</label>
+                <input type="text" id="areaCode" name="areaCode" value={newAsset.areaCode} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="system">System:</label>
+                <input type="text" id="system" name="system" value={newAsset.system} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="facilitySection">Facility Section:</label>
+                <input type="text" id="facilitySection" name="facilitySection" value={newAsset.facilitySection} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="functionalClassID">Functional Class ID:</label>
+                <input type="text" id="functionalClassID" name="functionalClassID" value={newAsset.functionalClassID} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="subsystem">Subsystem:</label>
+                <input type="text" id="subsystem" name="subsystem" value={newAsset.subsystem} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="cmmmsRequired">CMMMS Required:</label>
+                <input type="text" id="cmmmsRequired" name="cmmmsRequired" value={newAsset.cmmmsRequired} onChange={handleInputChange} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="tagFormatID">Tag Format ID:</label>
+                <input type="text" id="tagFormatID" name="tagFormatID" value={newAsset.tagFormatID} onChange={handleInputChange} />
+              </div>
+
+              {/* File Uploads */}
+              <div className="form-group">
+                <label htmlFor="assetDocuments">Documents (PDF, etc.):</label>
+                <input type="file" id="assetDocuments" name="assetDocuments" onChange={(e) => handleFileChange(e, 'documents')} multiple />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="asset2DModels">2D Models (CAD, etc.):</label>
+                <input type="file" id="asset2DModels" name="asset2DModels" onChange={(e) => handleFileChange(e, '2dmodels')} multiple />
+              </div>
+
+              <button type="submit" disabled={loading}>
+                {loading ? 'Creating...' : 'Create Asset'}
+              </button>
+              <button type="button" onClick={() => setShowCreateForm(false)}>Cancel</button>
+
+              {formMessage && <p>{formMessage}</p>}
+
+            </form>
+          </div>
+        )}
+
       </main>
     </div>
   );

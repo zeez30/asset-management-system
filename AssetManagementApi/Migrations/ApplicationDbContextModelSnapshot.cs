@@ -22,14 +22,35 @@ namespace AssetManagementApi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Asset3DModels", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssetTagNumber")
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetTagNumber");
+
+                    b.ToTable("Asset3DModels");
+                });
+
             modelBuilder.Entity("AssetManagementApi.Models.Asset", b =>
                 {
                     b.Property<string>("TagNumber")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("Age")
-                        .HasColumnType("int");
 
                     b.Property<string>("AreaCode")
                         .HasMaxLength(50)
@@ -44,17 +65,13 @@ namespace AssetManagementApi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool?>("CMIMSRequired")
+                    b.Property<bool?>("CMMMSRequired")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CurrentStatus")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("DeckPlatformCode")
+                    b.Property<string>("DeckPlatform")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -62,30 +79,9 @@ namespace AssetManagementApi.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<string>("FacilitySector")
+                    b.Property<string>("FacilitySection")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool?>("FoundInADL")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("FoundInADiagrams")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("FoundInAEngineering")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("FoundInAVEVAE3D")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("FoundInAVEVAElectricalAndInstrumentation")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("FoundInEDMS")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("FoundInPiVision")
-                        .HasColumnType("bit");
 
                     b.Property<string>("FunctionalClassID")
                         .HasMaxLength(100)
@@ -94,7 +90,7 @@ namespace AssetManagementApi.Migrations
                     b.Property<DateTime?>("InstallationDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("LastMaintenanceDate")
+                    b.Property<DateTime?>("LastMaintenance")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Manufacturer")
@@ -105,22 +101,19 @@ namespace AssetManagementApi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime?>("NextMaintenanceDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("SerialNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ServiceDescription")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Site")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Size")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Status")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -148,62 +141,55 @@ namespace AssetManagementApi.Migrations
                     b.ToTable("Assets");
                 });
 
-            modelBuilder.Entity("AssetManagementApi.Models.Asset2DModel", b =>
+            modelBuilder.Entity("AssetManagementApi.Models.Asset2DModels", b =>
                 {
-                    b.Property<string>("TagNumber")
-                        .HasMaxLength(50)
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssetTagNumber")
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("DrawingType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("AssetTagNumber1")
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("TagNumber");
+                    b.Property<string>("OriginalFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetTagNumber");
+
+                    b.HasIndex("AssetTagNumber1");
 
                     b.ToTable("Asset2DModels");
                 });
 
-            modelBuilder.Entity("AssetManagementApi.Models.Asset3DModel", b =>
+            modelBuilder.Entity("AssetManagementApi.Models.AssetDocuments", b =>
                 {
                     b.Property<string>("TagNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("AssetTagNumber")
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ModelType")
+                    b.Property<string>("OriginalFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("TagNumber");
 
-                    b.ToTable("Asset3DModels");
-                });
-
-            modelBuilder.Entity("AssetManagementApi.Models.AssetDocument", b =>
-                {
-                    b.Property<string>("TagNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("DocumentType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TagNumber");
+                    b.HasIndex("AssetTagNumber");
 
                     b.ToTable("AssetDocuments");
                 });
@@ -216,14 +202,13 @@ namespace AssetManagementApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AssociatedTagNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
+                    b.Property<string>("AssetTagNumber")
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("ParentTagNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
+                    b.Property<string>("AssociatedTagNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PrimaryTagNumber")
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("RelationshipType")
@@ -231,35 +216,66 @@ namespace AssetManagementApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssociatedTagNumber");
+                    b.HasIndex("AssetTagNumber");
 
-                    b.HasIndex("ParentTagNumber");
+                    b.HasIndex("PrimaryTagNumber");
 
                     b.ToTable("AssetRelationships");
                 });
 
+            modelBuilder.Entity("Asset3DModels", b =>
+                {
+                    b.HasOne("AssetManagementApi.Models.Asset", "Asset")
+                        .WithMany("Asset3DModels")
+                        .HasForeignKey("AssetTagNumber");
+
+                    b.Navigation("Asset");
+                });
+
+            modelBuilder.Entity("AssetManagementApi.Models.Asset2DModels", b =>
+                {
+                    b.HasOne("AssetManagementApi.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetTagNumber");
+
+                    b.HasOne("AssetManagementApi.Models.Asset", null)
+                        .WithMany("Asset2DModels")
+                        .HasForeignKey("AssetTagNumber1");
+
+                    b.Navigation("Asset");
+                });
+
+            modelBuilder.Entity("AssetManagementApi.Models.AssetDocuments", b =>
+                {
+                    b.HasOne("AssetManagementApi.Models.Asset", "Asset")
+                        .WithMany("AssetDocuments")
+                        .HasForeignKey("AssetTagNumber");
+
+                    b.Navigation("Asset");
+                });
+
             modelBuilder.Entity("AssetManagementApi.Models.AssetRelationship", b =>
                 {
-                    b.HasOne("AssetManagementApi.Models.Asset", "AssociatedAsset")
+                    b.HasOne("AssetManagementApi.Models.Asset", null)
+                        .WithMany("AssetRelationships")
+                        .HasForeignKey("AssetTagNumber");
+
+                    b.HasOne("AssetManagementApi.Models.Asset", "PrimaryAsset")
                         .WithMany()
-                        .HasForeignKey("AssociatedTagNumber")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PrimaryTagNumber");
 
-                    b.HasOne("AssetManagementApi.Models.Asset", "ParentAsset")
-                        .WithMany("AssociatedItems")
-                        .HasForeignKey("ParentTagNumber")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("AssociatedAsset");
-
-                    b.Navigation("ParentAsset");
+                    b.Navigation("PrimaryAsset");
                 });
 
             modelBuilder.Entity("AssetManagementApi.Models.Asset", b =>
                 {
-                    b.Navigation("AssociatedItems");
+                    b.Navigation("Asset2DModels");
+
+                    b.Navigation("Asset3DModels");
+
+                    b.Navigation("AssetDocuments");
+
+                    b.Navigation("AssetRelationships");
                 });
 #pragma warning restore 612, 618
         }

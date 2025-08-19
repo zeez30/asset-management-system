@@ -1,6 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
 
 namespace AssetManagementApi.Models
 {
@@ -8,13 +7,13 @@ namespace AssetManagementApi.Models
     {
         [Key]
         public int Id { get; set; }
-
-        [ForeignKey("Asset")]
-        public string? TagNumber { get; set; }
-        public Asset? Asset { get; set; }
-
-        public string? FileName { get; set; }
         public string? FilePath { get; set; }
-        public string? DrawingType { get; set; }
+        public string? OriginalFileName { get; set; }
+
+        // Foreign key to link back to the main Asset
+        public string? AssetTagNumber { get; set; }
+
+        [ForeignKey("AssetTagNumber")]
+        public virtual Asset? Asset { get; set; }
     }
 }

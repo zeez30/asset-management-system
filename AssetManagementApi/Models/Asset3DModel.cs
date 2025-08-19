@@ -1,20 +1,16 @@
-using System.ComponentModel.DataAnnotations;
+// Asset3DModels.cs
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
+using AssetManagementApi.Models; // <-- Add this line
 
-namespace AssetManagementApi.Models
+public class Asset3DModels
 {
-    public class Asset3DModels
-    {
-        [Key]
-        public int Id { get; set; }
+    public int Id { get; set; }
+    public string? FilePath { get; set; }
 
-        [ForeignKey("Asset")]
-        public string? TagNumber { get; set; }
-        public Asset? Asset { get; set; }
+    public string? AssetTagNumber { get; set; }
+    
+    public string? OriginalFileName { get; set; }
 
-        public string? FileName { get; set; }
-        public string? FilePath { get; set; }
-        public string? ModelType { get; set; }
-    }
+    [ForeignKey("AssetTagNumber")]
+    public Asset? Asset { get; set; }
 }

@@ -7,17 +7,15 @@ namespace AssetManagementApi.Models
     public class AssetRelationship
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-
-        public string? ParentTagNumber { get; set; }
-        [JsonIgnore]
-        public Asset? ParentAsset { get; set; }
-
-        public string? AssociatedTagNumber { get; set; }
         public string? RelationshipType { get; set; }
+        public string? AssociatedTagNumber { get; set; }
 
-        [NotMapped]
-        public Asset? AssociatedAsset { get; set; }
+        // Foreign key to the primary Asset
+        public string? PrimaryTagNumber { get; set; }
+        
+        [JsonIgnore]
+        [ForeignKey("PrimaryTagNumber")]
+        public virtual Asset? PrimaryAsset { get; set; }
     }
 }
