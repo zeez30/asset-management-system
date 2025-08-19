@@ -1,3 +1,4 @@
+/* General body and page styling */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -9,6 +10,7 @@ body {
   text-align: left;
 }
 
+/* Header section styling */
 .App-header {
   background-color: #fff;
   padding: 20px 40px;
@@ -39,6 +41,7 @@ h1 {
   margin: 0;
 }
 
+/* Search bar and related components styling */
 .search-container {
   display: flex;
   gap: 10px;
@@ -55,6 +58,7 @@ h1 {
   border-radius: 4px;
 }
 
+/* Autocomplete dropdown styling */
 .autocomplete-dropdown {
   position: absolute;
   top: 100%;
@@ -85,6 +89,7 @@ h1 {
   background-color: #f0f2f5;
 }
 
+/* Button styling */
 .search-button, .create-button {
   padding: 8px 16px;
   background-color: #0F4B91;
@@ -117,12 +122,14 @@ h1 {
   background-color: #e2e6ea;
 }
 
+/* Main content area */
 main {
   padding: 20px;
   max-width: 95%;
   margin: 20px auto;
 }
 
+/* Asset display containers */
 .asset-view-container {
   display: flex;
   justify-content: flex-start;
@@ -140,11 +147,8 @@ main {
   flex: 1;
 }
 
-
-
 .associated-asset-card {
   position: relative;
-  /* No change needed as it will now be handled by .asset-card */
 }
 
 .associated-2dmodel-card {
@@ -152,6 +156,7 @@ main {
   flex: 1;
 }
 
+/* Card header and close button */
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -183,6 +188,7 @@ main {
   background-color: #c82333;
 }
 
+/* Asset details and associated items list */
 .asset-details {
   margin-top: 15px;
 }
@@ -214,6 +220,7 @@ main {
   background-color: #e2e6ea;
 }
 
+/* Status messages (loading, error) */
 .loading, .error {
   margin-top: 20px;
 }
@@ -222,6 +229,7 @@ main {
   color: red;
 }
 
+/* Document viewer styling */
 .document-viewer {
   width: 100%;
   height: 95vh;
@@ -235,8 +243,7 @@ main {
   border-radius: 8px;
 }
 
-/* === NEW STYLES FOR ADD ASSET FORM === */
-
+/* New styles for the Add Asset form */
 .add-asset-container {
   background-color: #fff;
   border-radius: 8px;
@@ -316,6 +323,7 @@ main {
   margin-top: 10px;
 }
 
+/* Responsive design for smaller screens */
 @media (max-width: 992px) {
   .App-header {
     flex-direction: column;

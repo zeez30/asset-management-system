@@ -4,12 +4,16 @@ using System.Collections.Generic;
 
 namespace AssetManagementApi.Models
 {
+    // Represents the main 'Asset' entity in the database.
     public class Asset
     {
+        // The [Key] attribute designates this property as the primary key.
+        // The [StringLength] attribute sets a maximum length for the string data.
         [Key]
         [StringLength(50)]
         public string? TagNumber { get; set; }
 
+        // The [Required] attribute indicates that this field must have a value.
         [Required]
         [StringLength(255)]
         public string? AssetName { get; set; }
@@ -61,6 +65,7 @@ namespace AssetManagementApi.Models
         [StringLength(20)]
         public string? Subsystem { get; set; }
 
+        // Nullable boolean for CMMMSRequired
         public bool? CMMMSRequired { get; set; }
 
         [StringLength(100)]
@@ -70,7 +75,9 @@ namespace AssetManagementApi.Models
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        // Navigation properties
+        // Navigation properties represent relationships with other entities.
+        // ICollection is used for a one-to-many relationship.
+        // This allows an Asset to have multiple associated relationships, documents, and models.
         public ICollection<AssetRelationship> AssetRelationships { get; set; } = new List<AssetRelationship>();
         public ICollection<AssetDocuments> AssetDocuments { get; set; } = new List<AssetDocuments>();
         public ICollection<Asset2DModels> Asset2DModels { get; set; } = new List<Asset2DModels>();

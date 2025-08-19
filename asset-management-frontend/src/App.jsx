@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import logo from './assets/noc_logo.png';
 
+// Main App component
 function App() {
+  // State variables for managing asset data and UI state
   const [primaryAsset, setPrimaryAsset] = useState(null);
   const [associatedAsset, setAssociatedAsset] = useState(null);
   const [documentToView, setDocumentToView] = useState(null);
@@ -13,10 +15,10 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [formMessage, setFormMessage] = useState('');
 
-  // New state for conditional rendering
+  // New state for conditional rendering of the create form
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // New states for the form
+  // New states for the form input fields
   const [newAsset, setNewAsset] = useState({
     tagNumber: '',
     assetName: '',
@@ -41,10 +43,11 @@ function App() {
     tagFormatID: '',
   });
 
+  // States for handling file uploads for the form
   const [newAssetDocuments, setNewAssetDocuments] = useState([]);
   const [newAsset2DModels, setNewAsset2DModels] = useState([]);
 
-  // useEffect for debounced search
+  // useEffect for a debounced search functionality. It delays fetching search results until the user stops typing.
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (searchTag.length > 2) {
@@ -71,10 +74,11 @@ function App() {
 
     const debounceTimer = setTimeout(fetchSearchResults, 300);
 
+    // Cleanup function to clear the timer on re-render
     return () => clearTimeout(debounceTimer);
   }, [searchTag]);
 
-  // Function to fetch a single asset by tag
+  // Function to fetch a single asset by its tag number
   const fetchAssetByTag = async (tagNumber, isPrimary = true) => {
     setLoading(true);
     setError(null);
@@ -103,13 +107,13 @@ function App() {
     }
   };
 
-  // Click handler for autocomplete results
+  // Click handler for autocomplete results to fetch the selected asset
   const handleSelectResult = (tagNumber) => {
     setSearchTag(tagNumber);
     fetchAssetByTag(tagNumber);
   };
 
-  // Click handler for associated assets, documents, and 2D models
+  // Click handler for viewing associated assets, documents, and 2D models
   const handleViewAssociatedItem = (item) => {
     setDocumentToView(null);
     setAssociatedAsset(null);
@@ -124,18 +128,18 @@ function App() {
     }
   };
 
-  // Function to close the split views
+  // Function to close the view for associated assets, documents, and 2D models
   const closeAssociatedView = (type) => {
     if (type === 'asset') {
         setAssociatedAsset(null);
     } else if (type === 'document') {
-        setDocumentToView(null);
+      setDocumentToView(null);
     } else if (type === '2dmodel') {
-        setDocumentToView2D(null);
+      setDocumentToView2D(null);
     }
   }
 
-  // Handle input changes for the form fields
+  // Handles input changes for the new asset form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewAsset(prevAsset => ({
@@ -144,7 +148,7 @@ function App() {
     }));
   };
 
-  // Handle file changes for the file inputs
+  // Handles file selection for the file inputs
   const handleFileChange = (e, fileType) => {
     if (fileType === 'documents') {
       setNewAssetDocuments(Array.from(e.target.files));
@@ -153,28 +157,28 @@ function App() {
     }
   };
 
-  // Handle form submission
+  // Handles the submission of the new asset form
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setFormMessage('');
 
-    // Create a FormData object to send multipart/form-data
+    // Creates a FormData object to handle both text fields and file uploads
     const formData = new FormData();
 
-    // Append all text fields
+    // Appends all text-based form data
     for (const key in newAsset) {
       if (newAsset[key]) {
         formData.append(key, newAsset[key]);
       }
     }
 
-    // Append all document files
+    // Appends all document files
     newAssetDocuments.forEach((file) => {
       formData.append('AssetDocuments', file);
     });
 
-    // Append all 2D model files
+    // Appends all 2D model files
     newAsset2DModels.forEach((file) => {
       formData.append('Asset2DModels', file);
     });
@@ -187,11 +191,10 @@ function App() {
 
       if (response.ok) {
         setFormMessage('Asset created successfully!');
-        // Automatically fetch and display the newly created asset
+        // Fetches and displays the newly created asset
         fetchAssetByTag(newAsset.tagNumber);
-        // Hide the form after submission
+        // Hides the form and clears its state
         setShowCreateForm(false);
-        // Clear the form
         setNewAsset({
           tagNumber: '',
           assetName: '',
@@ -228,6 +231,7 @@ function App() {
     }
   };
 
+  // The main JSX structure for the application
   return (
     <div className="App">
       <header className="App-header">
@@ -246,9 +250,10 @@ function App() {
           />
           <button onClick={() => { setSearchTag(''); setPrimaryAsset(null); setAssociatedAsset(null); setDocumentToView(null); setDocumentToView2D(null); setSearchResults([]); }} className="clear-button">Clear Search</button>
 
-          {/* New Button to show the form */}
+          {/* Button to show the 'Add New Asset' form */}
           <button onClick={() => setShowCreateForm(true)} className="create-button">Add New Asset</button>
 
+          {/* Autocomplete search results dropdown */}
           {searchResults.length > 0 && (
             <ul className="autocomplete-dropdown">
               {searchResults.map((asset, index) => (
@@ -262,13 +267,15 @@ function App() {
       </header>
 
       <main>
+        {/* Loading and Error message display */}
         {loading && <p className="loading">Loading Asset...</p>}
         {error && <p className="error">{error}</p>}
 
-        {/* Conditional rendering for the main content */}
+        {/* Conditional rendering for the main asset view or search results */}
         {!loading && !error && !showCreateForm && (
           <div className="asset-view-container">
 
+            {/* Primary Asset Card */}
             {primaryAsset && (
               <div className="asset-card primary-asset-card">
                 <h3>Primary Asset:</h3>
@@ -297,6 +304,7 @@ function App() {
                   <p><strong>Created At:</strong> {new Date(primaryAsset.createdAt).toLocaleString()}</p>
                   <p><strong>Updated At:</strong> {new Date(primaryAsset.updatedAt).toLocaleString()}</p>
 
+                  {/* Associated items lists */}
                   {primaryAsset.assetRelationships?.length > 0 && (
                     <div className="associated-items-list">
                       <h5>Associated Assets:</h5>
@@ -342,7 +350,7 @@ function App() {
                       <ul>
                         {primaryAsset.asset3DModels.map(model => (
                           <li key={model.id}>
-                            {model.originalFileName} {/* CORRECTED: This line now uses originalFileName */}
+                            {model.originalFileName} {/* This line now uses originalFileName */}
                           </li>
                         ))}
                       </ul>
@@ -352,6 +360,7 @@ function App() {
               </div>
             )}
 
+            {/* Associated Asset and Document View Card */}
             {(associatedAsset || documentToView) && (
               <div className="asset-card associated-asset-card">
                 <div className="card-header">
@@ -397,6 +406,7 @@ function App() {
               </div>
             )}
 
+            {/* 2D Model Viewer Card */}
             {documentToView2D && (
                 <div className="asset-card associated-2dmodel-card">
                     <div className="card-header">
@@ -413,6 +423,7 @@ function App() {
           </div>
         )}
 
+        {/* Search result messages */}
         {primaryAsset === null && searchTag.length > 2 && searchResults.length === 0 && (
           <p>No Assets Found matching "{searchTag}"</p>
         )}
@@ -421,7 +432,7 @@ function App() {
           <p>Start typing to search for assets.</p>
         )}
 
-        {/* === NEW ADD ASSET FORM (Conditional Render) === */}
+        {/* New Add Asset Form (Conditional Render) */}
         {showCreateForm && (
           <div className="add-asset-container">
             <div className="card-header">
@@ -525,6 +536,7 @@ function App() {
                 <input type="file" id="asset2DModels" name="asset2DModels" onChange={(e) => handleFileChange(e, '2dmodels')} multiple />
               </div>
 
+              {/* Action Buttons */}
               <button type="submit" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Asset'}
               </button>
