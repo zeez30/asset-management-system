@@ -13,10 +13,12 @@ using Microsoft.AspNetCore.Http;
 
 namespace AssetManagementApi.Controllers
 {
+    // Sets the base route for the API controller
     [Route("api/[controller]")]
     [ApiController]
     public class AssetsController : ControllerBase
     {
+        // Dependency injection for the database context and web hosting environment
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _hostEnvironment;
 
@@ -27,16 +29,20 @@ namespace AssetManagementApi.Controllers
         }
 
         // GET: api/Assets
+        // Retrieves a list of all assets from the database
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Asset>>> GetAssets()
         {
             return await _context.Assets.ToListAsync();
         }
 
-        // GET: api/Assets/TAG-001
+        // GET: api/Assets/{tagNumber}
+        // Retrieves a single asset by its unique tag number.
+        // Eager loads related data (relationships, documents, 2D/3D models)
         [HttpGet("{tagNumber}")]
         public async Task<ActionResult> GetAsset(string tagNumber)
         {
+            // Query for the main asset and include its relationships and models
             var asset = await _context.Assets
                 .Include(a => a.AssetRelationships)
                 .Include(a => a.Asset2DModels)
@@ -45,6 +51,7 @@ namespace AssetManagementApi.Controllers
 
             if (asset != null)
             {
+                // Query for related documents separately
                 var documents = await _context.AssetDocuments
                     .Where(d => d.AssetTagNumber == tagNumber)
                     .Select(d => new
@@ -56,6 +63,7 @@ namespace AssetManagementApi.Controllers
                     })
                     .ToListAsync();
 
+                // Query for 2D models
                 var models2D = await _context.Asset2DModels
                     .Where(m => m.AssetTagNumber == tagNumber)
                     .Select(m => new 
@@ -65,6 +73,7 @@ namespace AssetManagementApi.Controllers
                     })
                     .ToListAsync();
 
+                // Query for 3D models
                 var models3D = await _context.Asset3DModels
                     .Where(m => m.AssetTagNumber == tagNumber)
                     .Select(m => new
@@ -74,6 +83,7 @@ namespace AssetManagementApi.Controllers
                     })
                     .ToListAsync();
                 
+                // Create an anonymous object to return the asset with all its associated data
                 var assetWithDocs = new
                 {
                     asset.TagNumber,
@@ -108,6 +118,7 @@ namespace AssetManagementApi.Controllers
                 return Ok(assetWithDocs);
             }
 
+            // If a primary asset is not found, check if the tag belongs to a document
             var document = await _context.AssetDocuments
                 .FirstOrDefaultAsync(d => d.TagNumber == tagNumber);
 
@@ -120,6 +131,8 @@ namespace AssetManagementApi.Controllers
         }
 
         // GET: api/Assets/ByPartialTag/TAG
+        // Retrieves a list of assets and documents that match a partial tag number.
+        // This is used for the search autocomplete functionality.
         [HttpGet("ByPartialTag/{partialTag}")]
         public async Task<ActionResult<IEnumerable<SearchResultDto>>> GetAssetsByPartialTag(string partialTag)
         {
@@ -130,6 +143,7 @@ namespace AssetManagementApi.Controllers
 
             var lowercasePartialTag = partialTag.ToLower();
 
+            // Search for matching assets
             var assetResults = await _context.Assets
                 .Where(a => a.TagNumber != null && a.TagNumber.ToLower().Contains(lowercasePartialTag))
                 .Select(a => new SearchResultDto
@@ -140,16 +154,18 @@ namespace AssetManagementApi.Controllers
                 })
                 .ToListAsync();
 
+            // Search for matching documents
             var documentResults = await _context.AssetDocuments
                 .Where(d => d.TagNumber != null && d.TagNumber.ToLower().Contains(lowercasePartialTag))
                 .Select(d => new SearchResultDto
                 {
                     TagNumber = d.TagNumber,
-                    AssetName = d.Title,
+                    AssetName = d.Title, // Use the document's title for the name
                     Type = "Document"
                 })
                 .ToListAsync();
 
+            // Combine and order the results
             var combinedResults = assetResults
                 .Union(documentResults)
                 .OrderBy(r => r.TagNumber)
@@ -159,21 +175,25 @@ namespace AssetManagementApi.Controllers
         }
 
         // POST: api/Assets
+        // Creates a new asset and handles file uploads (documents, 2D/3D models).
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult> PostAsset([FromForm] CreateAssetDto createAssetDto)
         {
+            // Validate the incoming model state
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
+            // Check for a duplicate asset tag number
             if (await _context.Assets.AnyAsync(a => a.TagNumber == createAssetDto.TagNumber))
             {
                 ModelState.AddModelError("TagNumber", "An asset with this tag number already exists.");
                 return Conflict(ModelState);
             }
 
+            // Create a new Asset object from the DTO
             var newAsset = new Asset
             {
                 TagNumber = createAssetDto.TagNumber!, 
@@ -206,6 +226,7 @@ namespace AssetManagementApi.Controllers
 
             var webRootPath = _hostEnvironment.WebRootPath;
 
+            // Handle Document file uploads
             if (createAssetDto.AssetDocuments != null && createAssetDto.AssetDocuments.Count > 0)
             {
                 var documentsDirectory = Path.Combine(webRootPath, "documents");
@@ -235,6 +256,7 @@ namespace AssetManagementApi.Controllers
                 }
             }
             
+            // Handle 2D Model file uploads
             if (createAssetDto.Asset2DModels != null && createAssetDto.Asset2DModels.Count > 0)
             {
                 var models2DDirectory = Path.Combine(webRootPath, "2dmodels");
@@ -262,6 +284,7 @@ namespace AssetManagementApi.Controllers
                 }
             }
 
+            // Handle 3D Model file uploads
             if (createAssetDto.Asset3DModels != null && createAssetDto.Asset3DModels.Count > 0)
             {
                 var models3DDirectory = Path.Combine(webRootPath, "3dmodels");
@@ -289,12 +312,15 @@ namespace AssetManagementApi.Controllers
                 }
             }
             
+            // Save all changes to the database
             await _context.SaveChangesAsync();
 
+            // Return a 201 Created response with the newly created asset
             return CreatedAtAction("GetAsset", new { tagNumber = newAsset.TagNumber }, newAsset);
         }
 
-        // DELETE: api/Assets/5
+        // DELETE: api/Assets/{tagNumber}
+        // Deletes an asset by its tag number
         [HttpDelete("{tagNumber}")]
         public async Task<IActionResult> DeleteAsset(string tagNumber)
         {
